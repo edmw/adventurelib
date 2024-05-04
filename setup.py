@@ -25,6 +25,10 @@ setup(
         ':python_version < "3.3"': [
             "backports.shutil_get_terminal_size>=1.0.0",
         ],
+        '"rich:python_version >= "3.11"': [
+            "rich>=13.7.0",
+            "prompt_toolkit>=3.0.0",
+        ],
     },
     python_requires=">=3",
     classifiers=[
