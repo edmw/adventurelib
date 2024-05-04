@@ -178,7 +178,7 @@ def load_from_data(name, cls):
     checked_keys = []
     consumed_keys = []
 
-    if cls is Room:
+    if issubclass(cls, Room):
         try:
             args = [obj_data["description"]]
             consumed_keys.append("description")
@@ -189,7 +189,7 @@ def load_from_data(name, cls):
                 f"{cls_name_lower} in data."
             )
         checked_keys.append("label")
-    elif cls is Item:
+    elif issubclass(cls, Item):
         args = [name]
         if aliases := obj_data.get("aliases"):
             args = args + [label.lower() for label in [name] + aliases]
