@@ -25,9 +25,8 @@ try:
 except ImportError:
     raise ImportError(
         "The adventurelib_rich module requires the tomllib library to load "
-        "data from TOML files. Either install it manually with "
-        "`pip install tomllib` or (re)install adventurelib using the 'rich' "
-        "extra `pip install adventurelib[rich]`."
+        "data from TOML files. tomllib is part of the Python standard library "
+        "from version 3.11. Please upgrade to Python 3.11 or newer."
     )
 
 try:
