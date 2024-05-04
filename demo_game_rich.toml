@@ -1,13 +1,13 @@
 [Room."Dark Room"]
-description = "You are in a [bold]dark room[/]."
+description = "You are in a [$STYLE_ROOM]dark room[/]."
 label = "Dark Room"
 
 [Room."Valley"]
-description = "You are in a [bold]beautiful valley[/]."
+description = "You are in a [$STYLE_ROOM]beautiful valley[/]."
 label = "Valley"
 
 [Room."Magic Forest"]
-description = "You are in a [bold]enchanted forest[/] where magic grows wildly."
+description = "You are in a [$STYLE_ROOM]enchanted forest[/] where magic grows wildly."
 label = "Magic Forest"
 
 [Item."rusty mallet"]

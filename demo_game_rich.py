@@ -2,6 +2,11 @@ from adventurelib_rich import *
 
 load("demo_game_rich.toml")
 
+console.substitutes = {
+    "STYLE_ROOM": "green",
+    "STYLE_ITEM": "yellow",
+}
+
 Room.label = None
 Room.items = Bag()
 
@@ -40,30 +45,30 @@ def go(direction):
 def take(item):
     obj = current_room.items.take(item)
     if obj:
-        say("You pick up the %s." % obj)
+        say("You pick up the [$STYLE_ITEM]%s[/]." % obj)
         inventory.add(obj)
     else:
-        say("There is no %s here." % item)
+        say("There is no [$STYLE_ITEM]%s[/] here." % item)
 
 
 @when("drop THING")
 def drop(thing):
     obj = inventory.take(thing)
     if not obj:
-        say("You do not have a %s." % thing)
+        say("You do not have a [$STYLE_ITEM]%s[/]." % thing)
     else:
-        say("You drop the %s." % obj)
+        say("You drop the [$STYLE_ITEM]%s[/]." % obj)
         current_room.items.add(obj)
 
 
 @when("look")
 def look():
     if current_room.label:
-        console.rule("[bold cyan]%s" % current_room.label)
+        print_ruler(current_room.label)
     say(current_room)
     if current_room.items:
         for i in current_room.items:
-            say("A %s is here." % i)
+            say("A [$STYLE_ITEM]%s[/] is here." % i)
 
 
 @when("inventory")
