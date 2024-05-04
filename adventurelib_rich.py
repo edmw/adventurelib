@@ -19,13 +19,39 @@ Python.
 import functools
 import re
 import string
-import tomllib
 
-import prompt_toolkit
-import prompt_toolkit.completion
-import rich.console
-import rich.style
-import rich.text
+try:
+    import tomllib
+except ImportError:
+    raise ImportError(
+        "The adventurelib_rich module requires the tomllib library to load "
+        "data from TOML files. Either install it manually with "
+        "`pip install tomllib` or (re)install adventurelib using the 'rich' "
+        "extra `pip install adventurelib[rich]`."
+    )
+
+try:
+    import prompt_toolkit
+    import prompt_toolkit.completion
+except ImportError:
+    raise ImportError(
+        "The adventurelib_rich module requires the prompt_toolkit library for "
+        "a better prompt. Either install it manually with "
+        "`pip install prompt_toolkit` or (re)install adventurelib using the "
+        "'rich' extra `pip install adventurelib[rich]`."
+    )
+
+try:
+    import rich.console
+    import rich.style
+    import rich.text
+except ImportError:
+    raise ImportError(
+        "The adventurelib_rich module requires the rich library for colorful "
+        "console output. Either install it manually with `pip install rich` "
+        "or (re)install adventurelib using the 'rich' extra "
+        "`pip install adventurelib[rich]`."
+    )
 
 import adventurelib as al
 from adventurelib import Bag, get_context, set_context, start, when
