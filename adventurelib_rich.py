@@ -19,6 +19,7 @@ Python.
 import functools
 import re
 import string
+from typing import Self, Type, TypeVar
 
 try:
     import tomllib
@@ -52,6 +53,7 @@ except ImportError:
         "`pip install adventurelib[rich]`."
     )
 
+
 import adventurelib as al
 from adventurelib import Bag, get_context, set_context, start, when
 
@@ -73,7 +75,7 @@ __all__ = (
 
 
 class Console(rich.console.Console):
-    substitutes = {}
+    substitutes: dict[str, str] = {}
 
 
 console = Console()
@@ -84,7 +86,7 @@ def print_ruler(label: str) -> None:
     console.rule(text, style=rich.style.Style(color="cyan"))
 
 
-def say(msg: str):
+def say(msg: str) -> None:
     msg = str(msg)
     msg = re.sub(r"^[ \t]*(.*?)[ \t]*$", r"\1", msg, flags=re.M)
     if console.substitutes:
@@ -97,7 +99,7 @@ def say(msg: str):
 # region Prompt
 
 
-def prompt_words():
+def prompt_words() -> list[str]:
     commands = al._available_commands()
     patterns = [pattern for pattern, _, _ in commands]
     words = {pattern.prefix[0] for pattern in patterns}
@@ -110,7 +112,7 @@ prompt_completer = prompt_toolkit.completion.WordCompleter(
 )
 
 
-def prompt():
+def prompt() -> str | prompt_toolkit.HTML:
     return prompt_toolkit.HTML("<ansicyan>⏵ </ansicyan>")
 
 
@@ -151,7 +153,10 @@ def load(filename: str) -> None:
         ) from tde
 
 
-def load_from_data(name, cls):
+E = TypeVar("E")
+
+
+def load_from_data(name: str, cls: Type[E]) -> E:
     if not adventure_data:
         raise AdventureDataError(
             'No adventure data loaded: use load("<filename>") first to read '
@@ -219,13 +224,13 @@ def load_from_data(name, cls):
 
 class Room(al.Room):
     @classmethod
-    def load(cls, name):
+    def load(cls, name: str) -> Self:
         return load_from_data(name, cls=cls)
 
 
 class Item(al.Item):
     @classmethod
-    def load(cls, name):
+    def load(cls, name: str) -> Self:
         return load_from_data(name, cls=cls)
 
 
