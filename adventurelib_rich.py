@@ -172,14 +172,20 @@ adventure_data = None
 
 
 class AdventureDataError(Exception):
-    pass
+    """Base class for exceptions raised by the TOML data loader."""
 
 
 class AdventureDataLoadError(AdventureDataError):
-    pass
+    """Raised when there is an error loading the TOML data from a file."""
 
 
 def load(filename: str) -> None:
+    """Loads the adventure data from a TOML file. The data is stored in a
+    global variable and can be accessed using the `get_from_data` function.
+
+    Raises:
+        AdventureDataLoadError: If the file is not found or the data is invalid.
+    """
     global adventure_data
     try:
         with open(filename, "rb") as f:
@@ -195,7 +201,20 @@ def load(filename: str) -> None:
 E = TypeVar("E")
 
 
-def get_from_data(name: str, cls: Type[E]) -> E:
+def _get_from_data(name: str, cls: Type[E]) -> E:
+    """Loads an entity from the adventure data using the given name and class.
+    Possible classes are `Room` and `Item`. The data must be loaded with the
+    `load` function before calling this function.
+
+    The TOML data file must have a section for the entity class with the type
+    and the name of the entity, for example `[Room."Dark Room"]`. Values from
+    this section will be added as attributes to the entity using their keys as
+    attribute names.
+
+    Raises:
+        AdventureDataError: If the data is not loaded, the entity is not found,
+            or there is a conflict with existing attributes of the entity.
+    """
     if not adventure_data:
         raise AdventureDataError(
             'No adventure data loaded: use load("<filename>") first to read '
@@ -219,8 +238,15 @@ def get_from_data(name: str, cls: Type[E]) -> E:
             f"{cls_name_lower} using their keys as attribute names."
         )
 
-    checked_keys = []
+    # Some keys are mandatory for certain entities and must be given in the
+    # initial arguments when creating the entity, for example the description
+    # for a room. These keys are handled separately and are added to this list:
     consumed_keys = []
+    # Keys are checked for conflicts with existing attributes of the entity
+    # class. That is to prevent overwriting existing attributes such as
+    # `forward`. Keys which should not be checked (and therefore are allowed
+    # to be overwritten) are added to this list:
+    checked_keys = []
 
     if issubclass(cls, Room):
         try:
@@ -241,8 +267,10 @@ def get_from_data(name: str, cls: Type[E]) -> E:
     else:
         args = []
 
+    # Create the entity object with the given arguments.
     obj = cls(*args)
 
+    # Add the remaining values from the data to the entity as attributes.
     for key, value in obj_data.items():
         if key in consumed_keys:
             continue
@@ -268,7 +296,7 @@ class Room(al.Room):
         loads the room data from the adventure data file. The data file must
         be loaded with the `load` function before calling this method.
         """
-        return get_from_data(name, cls=cls)
+        return _get_from_data(name, cls=cls)
 
 
 class Item(al.Item):
@@ -278,7 +306,7 @@ class Item(al.Item):
         loads the room data from the adventure data file. The data file must
         be loaded with the `load` function before calling this method.
         """
-        return get_from_data(name, cls=cls)
+        return _get_from_data(name, cls=cls)
 
 
 # endregion
