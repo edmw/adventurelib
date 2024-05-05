@@ -33,12 +33,13 @@ except ImportError:
 try:
     import prompt_toolkit
     import prompt_toolkit.completion
+    import prompt_toolkit.styles
 except ImportError:
     raise ImportError(
         "The adventurelib_rich module requires the prompt_toolkit library for "
         "a better prompt. Either install it manually with "
         "`pip install prompt_toolkit` or (re)install adventurelib using the "
-        "'rich' extra `pip install adventurelib[rich]`."
+        "'rich' extra with `pip install adventurelib[rich]`."
     )
 
 try:
@@ -49,7 +50,7 @@ except ImportError:
     raise ImportError(
         "The adventurelib_rich module requires the rich library for colorful "
         "console output. Either install it manually with `pip install rich` "
-        "or (re)install adventurelib using the 'rich' extra "
+        "or (re)install adventurelib using the 'rich' extra with "
         "`pip install adventurelib[rich]`."
     )
 
@@ -57,6 +58,10 @@ except ImportError:
 import adventurelib as al
 from adventurelib import Bag, get_context, set_context, start, when
 
+# Define the public API of this module to match the original adventurelib
+# module. This way, users can import this module as `adventurelib` and use
+# it as a drop-in replacement for the original adventurelib module.
+# __all__ is used when doing `from adventurelib_rich import *`.
 __all__ = (
     "when",
     "start",
@@ -68,30 +73,41 @@ __all__ = (
     "get_context",
     "load",
     "console",
-    "print_ruler",
 )
 
 # region Console
 
 
 class Console(rich.console.Console):
+    """Rich console with support for string substitution."""
+
     substitutes: dict[str, str] = {}
 
+    def print_ruler(self, label: str) -> None:
+        """Prints a ruler with a label."""
+        text = rich.text.Text(label, style=rich.style.Style(color="magenta", bold=True))
+        self.rule(text, style=rich.style.Style(color="cyan"))
 
+    def print_with_substitutions(self, msg: str) -> None:
+        """Prints a message with string substitutions."""
+        self.print(string.Template(msg).substitute(self.substitutes))
+
+
+# Create a global console object that can be used for printing messages.
 console = Console()
 
 
-def print_ruler(label: str) -> None:
-    text = rich.text.Text(label, style=rich.style.Style(color="magenta", bold=True))
-    console.rule(text, style=rich.style.Style(color="cyan"))
-
-
-def say(msg: str) -> None:
-    msg = str(msg)
+def say(msg: str | object) -> None:
+    """Replaces the original `say` function with a version that supports
+    styled output using rich libraries markup and string substitutions.
+    Keeps the original behavior of the `say` function of de-denting the
+    given text. Wrapping of text to fit within the width of the terminal is
+    left to the rich libraries console.
+    """
+    if not isinstance(msg, str):
+        msg = str(msg)
     msg = re.sub(r"^[ \t]*(.*?)[ \t]*$", r"\1", msg, flags=re.M)
-    if console.substitutes:
-        msg = string.Template(msg).substitute(console.substitutes)
-    console.print(msg)
+    console.print_with_substitutions(msg)
 
 
 # endregion
@@ -100,23 +116,46 @@ def say(msg: str) -> None:
 
 
 def prompt_words() -> list[str]:
+    """Returns a list of words that can be used for word completion in the
+    prompt. The words are extracted from the available commands of the
+    adventurelib module.
+    """
     commands = al._available_commands()
     patterns = [pattern for pattern, _, _ in commands]
     words = {pattern.prefix[0] for pattern in patterns}
-    return list(words)
+    return list(words) + ["abc", "abc1", "abc2", "abc3", "abc4", "abc5", "abc6"]
 
 
-prompt_session = prompt_toolkit.PromptSession()
+prompt_style = prompt_toolkit.styles.Style.from_dict(
+    {
+        "completion-menu.completion": "bg:ansicyan fg:ansiblack",
+        "completion-menu.completion.current": "bg:ansiwhite ansimagenta",
+    }
+)
+
+prompt_session = prompt_toolkit.PromptSession(style=prompt_style)
+# Define a completer that uses the words from the prompt_words function.
+# This is a very simple completer that only completes the first word of the
+# input with the available commands.
 prompt_completer = prompt_toolkit.completion.WordCompleter(
     words=prompt_words, ignore_case=True, sentence=True
 )
 
 
 def prompt() -> str | prompt_toolkit.HTML:
+    """A replacement for the original `prompt` function that uses the
+    prompt_toolkit library for a more advanced prompt with history and
+    word completion. The prompt is styled using the rich library.
+    """
     return prompt_toolkit.HTML("<ansicyan>⏵ </ansicyan>")
 
 
+# Replace the original prompt function with the new prompt function.
 al.prompt = prompt
+
+# Patch the adventurelib module to use the new prompt function together with
+# the word completer. This is done replacing the `input` function in the
+# adventurelib module.
 setattr(
     al,
     "input",
@@ -156,7 +195,7 @@ def load(filename: str) -> None:
 E = TypeVar("E")
 
 
-def load_from_data(name: str, cls: Type[E]) -> E:
+def get_from_data(name: str, cls: Type[E]) -> E:
     if not adventure_data:
         raise AdventureDataError(
             'No adventure data loaded: use load("<filename>") first to read '
@@ -225,13 +264,21 @@ def load_from_data(name: str, cls: Type[E]) -> E:
 class Room(al.Room):
     @classmethod
     def load(cls, name: str) -> Self:
-        return load_from_data(name, cls=cls)
+        """Extends the original `Room` entity with a `load` class method that
+        loads the room data from the adventure data file. The data file must
+        be loaded with the `load` function before calling this method.
+        """
+        return get_from_data(name, cls=cls)
 
 
 class Item(al.Item):
     @classmethod
     def load(cls, name: str) -> Self:
-        return load_from_data(name, cls=cls)
+        """Extends the original `Item` entity with a `load` class method that
+        loads the room data from the adventure data file. The data file must
+        be loaded with the `load` function before calling this method.
+        """
+        return get_from_data(name, cls=cls)
 
 
 # endregion

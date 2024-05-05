@@ -64,7 +64,7 @@ def drop(thing):
 @when("look")
 def look():
     if current_room.label:
-        print_ruler(current_room.label)
+        console.print_ruler(current_room.label)
     say(current_room)
     if current_room.items:
         for i in current_room.items:
