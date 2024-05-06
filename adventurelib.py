@@ -143,10 +143,14 @@ class Room:
         for dir in (forward, reverse):
             if not dir.islower():
                 raise InvalidCommand(
-                    'Invalid direction %r: directions must be all lowercase.'
+                    'Invalid direction %r: directions must be all lowercase.' % dir
                 )
             if dir in Room._directions:
                 raise KeyError('%r is already a direction!' % dir)
+            if hasattr(Room, dir):
+                raise AttributeError(
+                    '%r is already an attribute of Room.' % dir
+                )
         Room._directions[forward] = reverse
         Room._directions[reverse] = forward
 
