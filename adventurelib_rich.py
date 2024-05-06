@@ -123,7 +123,7 @@ def prompt_words() -> list[str]:
     commands = al._available_commands()
     patterns = [pattern for pattern, _, _ in commands]
     words = {pattern.prefix[0] for pattern in patterns}
-    return list(words) + ["abc", "abc1", "abc2", "abc3", "abc4", "abc5", "abc6"]
+    return list(words)
 
 
 prompt_style = prompt_toolkit.styles.Style.from_dict(
