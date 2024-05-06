@@ -206,7 +206,7 @@ you give an opposite. You would typically do this at the top of the file,
 before you define any rooms::
 
     Room.add_direction('up', 'down')
-    Room.add_direction('enter', 'exit')
+    Room.add_direction('enter', 'out')
 
     tent = Room(...)
     camp = Room(...)

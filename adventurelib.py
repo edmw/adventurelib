@@ -149,7 +149,7 @@ class Room:
                 raise KeyError('%r is already a direction!' % dir)
             if hasattr(Room, dir):
                 raise AttributeError(
-                    '%r is already an attribute of Room.' % dir
+                    '%r is an existing attribute and cannot be used as direction name!' % dir
                 )
         Room._directions[forward] = reverse
         Room._directions[reverse] = forward

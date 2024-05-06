@@ -1,3 +1,4 @@
+import copy
 from contextlib import contextmanager, redirect_stdout
 from io import StringIO
 from unittest.mock import patch
@@ -33,6 +34,26 @@ def setup_commands():
     orig_commands = adventurelib.commands[:]
     yield
     adventurelib.commands[:] = orig_commands
+
+
+@pytest.fixture(autouse=True)
+def setup_room():
+    original_room = {}
+    for key, value in Room.__dict__.items():
+        if not key.startswith("__"):
+            try:
+                original_room[key] = copy.copy(value)
+            except TypeError:
+                original_room[key] = value
+    yield
+    for key in list(Room.__dict__.keys()):
+        if not key.startswith("__") and key not in original_room:
+            delattr(Room, key)
+    for key, value in original_room.items():
+        try:
+            setattr(Room, key, value)
+        except AttributeError:
+            pass
 
 
 def test_match():
@@ -403,6 +424,6 @@ def test_room_add_direction_is_attribute():
     room = Room("Test Room")
     with pytest.raises(
         AttributeError,
-        match="'exit' is already an attribute of Room.",
+        match="'exit' is an existing attribute and cannot be used as direction name!",
     ):
         room.add_direction("up", "exit")
