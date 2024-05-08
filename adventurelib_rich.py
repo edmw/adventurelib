@@ -16,6 +16,7 @@ on rich and prompt_toolkit libraries and needs a minimum version of 3.11 for
 Python.
 """
 
+import datetime
 import functools
 import re
 import string
@@ -65,6 +66,7 @@ from adventurelib import Bag, get_context, set_context, start, when
 __all__ = (
     "when",
     "start",
+    "protected",
     "Room",
     "Item",
     "Bag",
@@ -91,6 +93,11 @@ class Console(rich.console.Console):
     def print_with_substitutions(self, msg: str) -> None:
         """Prints a message with string substitutions."""
         self.print(string.Template(msg).substitute(self.substitutes))
+
+    def prompt_password(self, message: str = "") -> str:
+        return prompt_toolkit.prompt(
+            prompt_toolkit.HTML(f"{message}"), is_password=True
+        ).strip()
 
 
 # Create a global console object that can be used for printing messages.
@@ -138,7 +145,7 @@ prompt_session = prompt_toolkit.PromptSession(style=prompt_style)
 # This is a very simple completer that only completes the first word of the
 # input with the available commands.
 prompt_completer = prompt_toolkit.completion.WordCompleter(
-    words=prompt_words, ignore_case=True, sentence=True
+    words=prompt_words, ignore_case=True
 )
 
 
@@ -163,6 +170,7 @@ setattr(
         prompt_session.prompt, completer=prompt_completer, reserve_space_for_menu=4
     ),
 )
+
 
 # endregion
 
@@ -307,6 +315,69 @@ class Item(al.Item):
         be loaded with the `load` function before calling this method.
         """
         return _get_from_data(name, cls=cls)
+
+
+# endregion
+
+# region Protected
+
+
+class protected:
+    """Decorator to protect a function with a password prompt.
+
+    How to use:
+    ```
+    @protected
+    def secret_function():
+        print("You found the secret function!")
+    ```
+
+    How to customize:
+    ```
+    protected.password = "secret"
+    protected.message = "Enter password:"
+    protected.message_success = "Password is correct!"
+    protected.message_fail = "Password is not correct."
+    protected.timeout = 600
+    ```
+    """
+
+    password = "password"
+    message = "password?"
+    message_success: str | None = None
+    message_fail: str | None = "wrong password!"
+    timeout: int = 0
+
+    _authorized_at = None
+
+    def __init__(self, function):
+        self.function = function
+        functools.update_wrapper(self, function)
+
+    def _authorized(self) -> bool:
+        if self._authorized_at:
+            timedelta = datetime.datetime.now() - self._authorized_at
+            return timedelta < datetime.timedelta(seconds=self.timeout)
+        else:
+            return False
+
+    def _authorize(self):
+        self._authorized_at = datetime.datetime.now()
+
+    def __call__(self, *args, **kwargs):
+        if not self._authorized():
+            password = console.prompt_password(self.message)
+            if password != self.password:
+                if self.message_fail:
+                    console.print(self.message_fail)
+                return None
+
+            self._authorize()
+
+            if self.message_success:
+                console.print(self.message_success)
+
+        return self.function(*args, **kwargs)
 
 
 # endregion
