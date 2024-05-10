@@ -128,9 +128,11 @@ def prompt_words() -> list[str]:
     adventurelib module.
     """
     commands = al._available_commands()
-    patterns = [pattern for pattern, _, _ in commands]
-    words = {pattern.prefix[0] for pattern in patterns}
-    return list(words)
+    command_patterns = [pattern for pattern, _, _ in commands]
+    command_words = {pattern.prefix[0] for pattern in command_patterns}
+    room_words = {room.name for room in Room.collection.values()}
+    item_words = {item.name for item in Item.collection.values()}
+    return sorted(list(command_words | room_words | item_words))
 
 
 prompt_style = prompt_toolkit.styles.Style.from_dict(
@@ -257,8 +259,9 @@ def _get_from_data(name: str, cls: Type[E]) -> E:
     checked_keys = []
 
     if issubclass(cls, Room):
+        args = [name]
         try:
-            args = [obj_data["description"]]
+            args = args + [obj_data["description"]]
             consumed_keys.append("description")
         except KeyError:
             raise AdventureDataError(
@@ -306,6 +309,18 @@ class Room(al.Room):
         """
         return _get_from_data(name, cls=cls)
 
+    collection = {}
+
+    def __init__(self, name: str, description: str):
+        room_key = name.lower()
+        if room_key.lower() in Room.collection:
+            raise ValueError(f"Room with key '{room_key}' already exists")
+
+        self.name = name
+        super().__init__(description)
+
+        Room.collection[room_key] = self
+
 
 class Item(al.Item):
     @classmethod
@@ -315,6 +330,17 @@ class Item(al.Item):
         be loaded with the `load` function before calling this method.
         """
         return _get_from_data(name, cls=cls)
+
+    collection = {}
+
+    def __init__(self, name: str, *aliases: str):
+        item_key = name.lower()
+        if item_key.lower() in Item.collection:
+            raise ValueError(f"Item with key '{item_key}' already exists")
+
+        super().__init__(name, *aliases)
+
+        Item.collection[item_key] = self
 
 
 # endregion
